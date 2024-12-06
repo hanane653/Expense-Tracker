@@ -1,0 +1,163 @@
+<div class="container">
+    <div class="main-content">
+      <h1 style="text-align: center;" class="app-title">Expense Tracker</h1>
+  
+      <!-- Intro Section -->
+      <div class="intro-section">
+        <h2 class="intro-title">Welcome to Your Personal Expense Tracker</h2>
+        <p class="intro-text">
+          Manage your finances effortlessly! Track your spending, organize expenses by category, and stay on top of your budget. Let's help you achieve your financial goals, one step at a time! 💰📊
+        </p>
+        <div class="cta-buttons">
+          <button *ngIf="!isLoggedIn" (click)="showLogin()" class="cta-btn">
+            <i class="fa fa-sign-in-alt"></i> Already Registered!
+          </button>
+          <button *ngIf="!isLoggedIn" (click)="showRegister()" class="cta-btn register-cta-btn">
+            <i class="fa fa-user-plus"></i> Create an Account
+          </button>
+          <!-- Buttons for Expense Form and List -->
+          <div class="cta-buttons">
+            <button *ngIf="isLoggedIn && !isFormVisible" (click)="toggleForm()" class="cta-btn">
+              <i class="fa fa-wallet"></i> Start Tracking Expenses
+            </button>
+            <button *ngIf="isLoggedIn && isFormVisible" (click)="toggleForm()" class="cta-btn">
+              <i class="fa fa-times"></i> Hide Form
+            </button>
+            <button *ngIf="isLoggedIn" (click)="toggleExpenseList()" class="cta-btn">
+              <i class="fa" [ngClass]="isExpenseListVisible ? 'fa-eye-slash' : 'fa-eye'"></i>
+              {{ isExpenseListVisible ? 'Hide Expenses' : 'List your expenses' }}
+            </button>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Dashboard -->
+      <div *ngIf="isLoggedIn">
+        <h3>Dashboard</h3>
+  
+        <!-- Expense Form -->
+        <form *ngIf="isFormVisible" (ngSubmit)="addExpense()" class="expense-form">
+          <div>
+            <label for="description">Description:</label>
+            <input id="description" type="text" [(ngModel)]="newExpense.description" name="description" placeholder="Enter description" required />
+          </div>
+          <div>
+            <label for="amount">Amount:</label>
+            <input id="amount" type="number" [(ngModel)]="newExpense.amount" name="amount" placeholder="Enter amount" min="0.01" step="0.01" required />
+          </div>
+          <div>
+            <label for="date">Date:</label>
+            <input id="date" type="datetime-local" [(ngModel)]="newExpense.date" name="date" required />
+          </div>
+          <div>
+            <label for="category">Category:</label>
+            <select id="category" [(ngModel)]="newExpense.categoryId" name="categoryId" required>
+              <option *ngFor="let category of categories" [value]="category.id">{{ category.name }}</option>
+            </select>
+          </div>
+          <button type="submit" class="submit-btn">
+            <i class="fa fa-plus-circle"></i> Add Expense
+          </button>
+        </form>
+  
+        <!-- Expense List -->
+        <div *ngIf="isExpenseListVisible" class="expense-list-container">
+          <h2>Your Expenses</h2>
+          <table class="expense-table">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Date</th>
+                <th>Category</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let expense of expenses">
+                <td>{{ expense.description }}</td>
+                <td>${{ expense.amount }}</td>
+                <td>{{ expense.date | date: 'shortDate' }}</td>
+                <td>{{ getCategoryName(expense.categoryId) }}</td>
+                <td>
+                  <button (click)="deleteExpense(expense.id)" class="btn btn-danger">
+                    <i class="fa fa-trash-alt"></i> Delete
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+  
+        <!-- Expense Pie Chart -->
+        <div class="chart-container" style="height: 300px; width: 80%; margin: 0 auto;">
+          <h2>Expenses by Category</h2>
+          <canvas baseChart [data]="chartData" [options]="chartOptions" [type]="'pie'"></canvas>
+        </div>
+  
+        <!-- Budget Progress -->
+        <div class="budget-summary">
+            <div class="budget-card">
+              <i class="fa fa-wallet card-icon budget-icon"></i>
+              <div class="card-content">
+                <h3>Monthly Budget</h3>
+                <p>${{ registerModel.budget || 0 }}</p>
+              </div>
+            </div>
+            <div class="budget-card">
+              <i class="fa fa-shopping-cart card-icon spent-icon"></i>
+              <div class="card-content">
+                <h3>Total Spent</h3>
+                <p>${{ getTotalSpent() }}</p>
+              </div>
+            </div>
+            <div class="budget-card">
+              <i class="fa fa-chart-line card-icon remaining-icon"></i>
+              <div class="card-content">
+                <h3>Remaining Budget</h3>
+                <p [class.negative]="getRemainingBudget() < 0">${{ getRemainingBudget() }}</p>
+              </div>
+            </div>
+          </div>
+          <!-- Progress Bar -->
+<div class="progress-container">
+    <p><strong>Progress:</strong></p>
+    <div class="progress-bar-bg">
+      <div class="progress-bar" [style.width]="getProgressBarWidth()"></div>
+    </div>
+  </div>
+  
+      </div>
+  
+      <!-- Login Form -->
+      <div *ngIf="isLoginVisible">
+        <h2 style="text-align: center;">Login</h2>
+        <form (ngSubmit)="login()" class="auth-form">
+            <h3 style="text-align: center;">Enter your information</h3>
+          <input [(ngModel)]="loginModel.email" name="email" placeholder="Email" required />
+          <input [(ngModel)]="loginModel.password" name="password" type="password" placeholder="Password" required />
+          <button type="submit" class="login-btn">
+            <i class="fa fa-sign-in-alt"></i> Login
+          </button>
+        </form>
+      </div>
+  
+      <!-- Register Form -->
+      <div *ngIf="isRegisterVisible">
+        <h2 style="text-align: center;">Register</h2>
+        <form (ngSubmit)="register()" class="auth-form">
+            <h3 style="text-align: center;">Enter your information</h3>
+          <input [(ngModel)]="registerModel.email" name="email" placeholder="Email" required />
+          <input [(ngModel)]="registerModel.password" name="password" type="password" placeholder="Password" required />
+          <input [(ngModel)]="registerModel.fullName" name="fullName" placeholder="Full Name" required />
+          <input [(ngModel)]="registerModel.budget" name="budget" type="number" placeholder="Budget" required />
+          <button type="submit" class="register-btn">
+            <i class="fa fa-user-plus"></i> Register
+          </button>
+        </form>
+      </div>
+  
+      <p *ngIf="notification" class="notification">{{ notification }}</p>
+    </div>
+  </div>
+  
